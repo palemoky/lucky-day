@@ -205,7 +205,7 @@ func (m *model) viewAllWinners() string {
 			for i := 0; i < len(names); i += namesPerLine {
 				end := min(i+namesPerLine, len(names))
 				line := strings.Join(names[i:end], ", ")
-				b.WriteString(blurredStyle.Render("  " + line))
+				b.WriteString(winnerStyle.Render("  " + line))
 				b.WriteString("\n")
 			}
 			hasPrintedFirstBlock = true

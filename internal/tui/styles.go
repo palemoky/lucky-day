@@ -27,6 +27,7 @@ var (
 
 	focusedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("205")).Bold(true)
 	blurredStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+	winnerStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("228")).Bold(true)
 	helpStyle    = blurredStyle.Padding(0, 1)
 	errorStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("9")).Italic(true)
 
