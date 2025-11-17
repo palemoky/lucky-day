@@ -23,22 +23,19 @@ jobs:
         with:
           go-version: "1.25.x"
 
-      - name: Install 7-Zip
-        if: matrix.os == 'windows'
-        run: sudo apt-get update && sudo apt-get install -y p7zip-full
-
       - name: Build
         id: build
         env:
           GOOS: ${{ matrix.os }}
           GOARCH: ${{ matrix.arch }}
+          PROJECT_NAME: ${{ github.event.repository.name }}
         run: |
-          output_name="lucky-day-${{ matrix.os }}-${{ matrix.arch }}"
+          output_name="${{ PROJECT_NAME }}-${{ matrix.os }}-${{ matrix.arch }}"
           if [ "${{ matrix.os }}" = "windows" ]; then
             output_name+=".exe"
           fi
 
-          go build -ldflags="-s -w" -o "$output_name" .
+          go build -ldflags="-s -w" -o "$output_name" ./cmd
 
           if [ "${{ matrix.os }}" = "windows" ]; then
             7z a "${output_name}.zip" "$output_name"
@@ -51,7 +48,7 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: lucky-day-${{ matrix.os }}-${{ matrix.arch }}
+          name: ${{ PROJECT_NAME }}-${{ matrix.os }}-${{ matrix.arch }}
           path: ${{ env.ASSET_PATH }}
 
   # Job 2: 创建 GitHub Release
