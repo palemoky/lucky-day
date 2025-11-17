@@ -23,7 +23,12 @@ jobs:
         with:
           go-version: "1.25.x"
 
+      - name: Install 7-Zip
+        if: matrix.os == 'windows'
+        run: sudo apt-get update && sudo apt-get install -y p7zip-full
+
       - name: Build
+        id: build
         env:
           GOOS: ${{ matrix.os }}
           GOARCH: ${{ matrix.arch }}
