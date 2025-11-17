@@ -33,26 +33,22 @@ jobs:
           TAG: ${{ github.ref_name }}
         run: |
           PACKAGE_DIR="${PROJECT_NAME}_${TAG}_${GOOS}_${GOARCH}"
-          BINARY_BASE_NAME="${PROJECT_NAME}-${GOOS}-${GOARCH}"
-          BINARY_FINAL_NAME="${BINARY_BASE_NAME}"
-
-          BINARY_NAME_IN_PACKAGE="${PROJECT_NAME}"
+          BINARY_NAME="${PROJECT_NAME}"
           if [ "${GOOS}" = "windows" ]; then
-            BINARY_NAME_IN_PACKAGE+=".exe"
-            ARCHIVE_NAME="${PACKAGE_DIR}.zip"
-          else
-            ARCHIVE_NAME="${PACKAGE_DIR}.tar.gz"
+            BINARY_NAME+=".exe"
           fi
 
           mkdir -p "${PACKAGE_DIR}"
 
-          go build -ldflags="-s -w" -o "${PACKAGE_DIR}/${BINARY_NAME_IN_PACKAGE}" ./cmd
+          go build -ldflags="-s -w" -o "${PACKAGE_DIR}/${BINARY_NAME}" ./cmd
 
           cp config.yml participants.csv README.md "${PACKAGE_DIR}/"
 
           if [ "${GOOS}" = "windows" ]; then
+            ARCHIVE_NAME="${PACKAGE_DIR}.zip"
             7z a "${ARCHIVE_NAME}" "${PACKAGE_DIR}"
           else
+            ARCHIVE_NAME="${PACKAGE_DIR}.tar.gz"
             tar -czvf "${ARCHIVE_NAME}" "${PACKAGE_DIR}"
           fi
 
@@ -61,8 +57,9 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ github.event.repository.name }}-${{ matrix.os }}-${{ matrix.arch }}
+          name: release-asset-${{ matrix.os }}-${{ matrix.arch }}
           path: ${{ steps.build-and-package.outputs.asset_path }}
+          retention-days: 1
 
   create-release:
     name: Create GitHub Release
@@ -72,10 +69,10 @@ jobs:
       contents: write
 
     steps:
-      - name: Download all build artifacts
+      - name: Download all release assets
         uses: actions/download-artifact@v4
         with:
-          path: artifacts/
+          path: release-assets/
 
       - name: Create Release and Upload Assets
         uses: softprops/action-gh-release@v2
@@ -83,4 +80,4 @@ jobs:
           tag_name: ${{ github.ref_name }}
           generate_release_notes: true
           files: |
-            artifacts/**/*
+            release-assets/**/*
