@@ -30,14 +30,14 @@ jobs:
           GOARCH: ${{ matrix.arch }}
           PROJECT_NAME: ${{ github.event.repository.name }}
         run: |
-          output_name="${{ PROJECT_NAME }}-${{ matrix.os }}-${{ matrix.arch }}"
-          if [ "${{ matrix.os }}" = "windows" ]; then
+          output_name="${PROJECT_NAME}-${GOOS}-${GOARCH}"
+          if [ "${GOOS}" = "windows" ]; then
             output_name+=".exe"
           fi
 
           go build -ldflags="-s -w" -o "$output_name" ./cmd
 
-          if [ "${{ matrix.os }}" = "windows" ]; then
+          if [ "${GOOS}" = "windows" ]; then
             7z a "${output_name}.zip" "$output_name"
             echo "ASSET_PATH=${output_name}.zip" >> $GITHUB_ENV
           else
