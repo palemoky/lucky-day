@@ -21,42 +21,53 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.25.x"
+          go-version-file: "go.mod"
+          cache: true
 
-      - name: Build
-        id: build
+      - name: Build and Package
+        id: build-and-package
         env:
           GOOS: ${{ matrix.os }}
           GOARCH: ${{ matrix.arch }}
           PROJECT_NAME: ${{ github.event.repository.name }}
+          TAG: ${{ github.ref_name }}
         run: |
-          output_name="${PROJECT_NAME}-${GOOS}-${GOARCH}"
-          if [ "${GOOS}" = "windows" ]; then
-            output_name+=".exe"
-          fi
+          PACKAGE_DIR="${PROJECT_NAME}_${TAG}_${GOOS}_${GOARCH}"
+          BINARY_BASE_NAME="${PROJECT_NAME}-${GOOS}-${GOARCH}"
+          BINARY_FINAL_NAME="${BINARY_BASE_NAME}"
 
-          go build -ldflags="-s -w" -o "$output_name" ./cmd
-
+          BINARY_NAME_IN_PACKAGE="${PROJECT_NAME}"
           if [ "${GOOS}" = "windows" ]; then
-            7z a "${output_name}.zip" "$output_name"
-            echo "ASSET_PATH=${output_name}.zip" >> $GITHUB_ENV
+            BINARY_NAME_IN_PACKAGE+=".exe"
+            ARCHIVE_NAME="${PACKAGE_DIR}.zip"
           else
-            tar -czvf "${output_name}.tar.gz" "$output_name"
-            echo "ASSET_PATH=${output_name}.tar.gz" >> $GITHUB_ENV
+            ARCHIVE_NAME="${PACKAGE_DIR}.tar.gz"
           fi
+
+          mkdir -p "${PACKAGE_DIR}"
+
+          go build -ldflags="-s -w" -o "${PACKAGE_DIR}/${BINARY_NAME_IN_PACKAGE}" ./cmd
+
+          cp config.yml participants.csv README.md "${PACKAGE_DIR}/"
+
+          if [ "${GOOS}" = "windows" ]; then
+            7z a "${ARCHIVE_NAME}" "${PACKAGE_DIR}"
+          else
+            tar -czvf "${ARCHIVE_NAME}" "${PACKAGE_DIR}"
+          fi
+
+          echo "asset_path=${ARCHIVE_NAME}" >> $GITHUB_OUTPUT
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.event.repository.name }}-${{ matrix.os }}-${{ matrix.arch }}
-          path: ${{ env.ASSET_PATH }}
+          path: ${{ steps.build-and-package.outputs.asset_path }}
 
-  # Job 2: 创建 GitHub Release
   create-release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
     needs: build
-
     permissions:
       contents: write
 
