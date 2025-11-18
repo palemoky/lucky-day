@@ -19,9 +19,6 @@ jobs:
   test-and-lint:
     name: Test and Lint
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: go
 
     steps:
       - uses: actions/checkout@v4
@@ -37,7 +34,6 @@ jobs:
         uses: golangci/golangci-lint-action@v6
         with:
           version: latest
-          working-directory: go
           args: --enable=goimports --enable=staticcheck --timeout=5m
 
       - name: Install gotestsum
