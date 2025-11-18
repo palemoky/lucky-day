@@ -3,6 +3,7 @@
 ![Go Version](https://img.shields.io/badge/go-1.25+-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Test Status](https://img.shields.io/badge/tests-passing-brightgreen.svg)
+[![Go Report Card](https://goreportcard.com/badge/github.com/palemoky/lucky-day)](https://goreportcard.com/report/github.com/palemoky/lucky-day)
 
 一款功能强大、高度可配置的终端抽奖应用程序。专为公司年会、线上活动、社区抽奖等场景设计，提供公平、透明且富有观赏性的抽奖体验。
 
