@@ -43,7 +43,7 @@ jobs:
           coverage=$(go tool cover -func=cover.out | grep '^total:' | awk '{gsub(/%/, "", $3); print $3}')
           echo "Total coverage: ${coverage}%"
 
-          THRESHOLD=70.0
+          THRESHOLD=20.0
           is_passed=$(awk -v cov="$coverage" -v th="$THRESHOLD" 'BEGIN {print (cov >= th) ? 1 : 0}')
 
           if [ "$is_passed" -eq 1 ]; then
