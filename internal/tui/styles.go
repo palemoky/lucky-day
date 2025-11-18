@@ -23,11 +23,11 @@ var (
 			Border(lipgloss.NormalBorder()).
 			BorderForeground(lipgloss.Color("240")).
 			Padding(1, 2).
-			Width(45) 
+			Width(45)
 
 	focusedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("205")).Bold(true)
 	blurredStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
-	winnerStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("228")).Bold(true)
+	winnerStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("228")).Bold(true)
 	helpStyle    = blurredStyle.Padding(0, 1)
 	errorStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("9")).Italic(true)
 
@@ -36,6 +36,6 @@ var (
 			BorderForeground(lipgloss.Color("228")).
 			Foreground(lipgloss.Color("228")).
 			Bold(true).
-			// Padding(1, 3).
-			Margin(0, 1) 
+		// Padding(1, 3).
+		Margin(0, 1)
 )
