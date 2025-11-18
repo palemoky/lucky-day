@@ -1,0 +1,105 @@
+#!/bin/sh
+
+GO_DIR="."
+COVERAGE_THRESHOLD=70.0
+COVER_PROFILE="cover.out"
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+run_go_tests() {
+    if [ "$GO_DIR" != "." ]; then
+        if [ ! -d "$GO_DIR" ]; then
+             echo "${RED}Error: Directory '$GO_DIR' not found.${NC}"
+             return 1
+        fi
+        cd "$GO_DIR" || return 1
+    fi
+
+    echo "${BLUE}Running Go tests and checking coverage (Threshold: ${COVERAGE_THRESHOLD}%)...${NC}"
+
+    # 优先使用 gotestsum 显示漂亮的输出，否则回退到 go test
+    if command -v gotestsum >/dev/null 2>&1; then
+        if ! gotestsum --format short --no-summary=skipped -- -coverprofile="$COVER_PROFILE" ./...; then
+            echo "${RED}Go tests failed.${NC}"
+            return 1
+        fi
+    else
+        echo "${YELLOW}gotestsum not found, using standard go test...${NC}"
+        if ! go test -coverprofile="$COVER_PROFILE" ./...; then
+            echo "${RED}Go tests failed.${NC}"
+            return 1
+        fi
+    fi
+
+    # 提取总覆盖率
+    coverage_value=$(go tool cover -func="$COVER_PROFILE" | grep '^total:' | awk '{gsub(/%/, "", $3); print $3}')
+
+    # 清理生成的覆盖率文件
+    rm -f "$COVER_PROFILE"
+
+    if [ -z "$coverage_value" ]; then
+        echo "${RED}Could not determine Go test coverage.${NC}"
+        return 1
+    fi
+
+    # 比较阈值 (使用 awk 支持浮点数)
+    is_passed=$(awk -v cov="$coverage_value" -v th="$COVERAGE_THRESHOLD" 'BEGIN {print (cov >= th) ? 1 : 0}')
+
+    if [ "$is_passed" -eq 1 ]; then
+        echo "${GREEN}Coverage ${coverage_value}% meets the threshold ${COVERAGE_THRESHOLD}% ✓${NC}"
+        return 0
+    else
+        echo "${RED}Coverage ${coverage_value}% is BELOW threshold ${COVERAGE_THRESHOLD}% ✕${NC}"
+        return 1
+    fi
+}
+
+# 空 SHA 定义
+Z40="0000000000000000000000000000000000000000"
+
+while read local_ref local_sha remote_ref remote_sha; do
+    # 1. 如果是删除分支的操作，跳过
+    if [ "$local_sha" = "$Z40" ]; then
+        continue
+    fi
+
+    # 2. 确定检查范围
+    if [ "$remote_sha" = "$Z40" ]; then
+        # 新分支推送：
+        # 严格来说应该对比 origin/main，但为了简单且不出错，
+        # 这里只检查 HEAD (当前状态) 的文件。
+        # 既然是新分支，假设所有当前文件都值得关注。
+        echo "${YELLOW}New branch push detected. checking HEAD...${NC}"
+        range="HEAD" 
+        # 注意：对于新分支，diff-tree HEAD 只能看到最后一次 commit 的变动。
+        # 如果希望新分支强制跑测试，可以将下面的 changed_files 逻辑改为强制 true
+    else
+        # 更新分支：检查 range 差异
+        range="$remote_sha..$local_sha"
+    fi
+
+    # 3. 检查是否有 Go 文件变更
+    # git diff-tree: 列出两个 commit 之间变化的文件名
+    changed_go_files=$(git diff-tree --no-commit-id --name-only -r "$range" | grep "\.go$")
+
+    if [ -n "$changed_go_files" ] || [ "$range" = "HEAD" ]; then
+        # 如果是新分支(HEAD) 或者检测到了 go 文件变化，则运行测试
+        echo "${YELLOW}Detected changes in Go files. Starting validation...${NC}"
+        
+        # 在子 shell 中运行函数，防止 cd 影响后续循环
+        if ! (run_go_tests); then
+            echo "${RED}--------------------------------------------------------${NC}"
+            echo "${RED}PUSH ABORTED: Go tests or coverage check failed.${NC}"
+            echo "${RED}--------------------------------------------------------${NC}"
+            exit 1
+        fi
+    else
+        echo "${GREEN}No Go files changed in this push. Skipping tests.${NC}"
+    fi
+done
+
+exit 0
