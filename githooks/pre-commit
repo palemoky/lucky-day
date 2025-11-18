@@ -14,7 +14,7 @@ if ! command -v goimports >/dev/null 2>&1; then
 fi
 
 # 3. 获取暂存区(Staged)的所有 .go 文件
-staged_go_files=$(git diff --cached --name-only --diff-filter=ACMR | grep "\.go$")
+staged_go_files=$(git diff --cached --name-only --diff-filter=ACMR | grep "\.go$" || true)
 
 # 4. 如果没有 Go 文件变更，直接退出
 if [ -z "$staged_go_files" ]; then
