@@ -1,6 +1,6 @@
 # lucky-day 幸运日
 
-![Go Version](https://img.shields.io/badge/go-1.25+-blue.svg)
+![Go Version](https://img.shields.io/badge/go-1.24+-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Test Status](https://img.shields.io/badge/tests-passing-brightgreen.svg)
 [![Go Report Card](https://goreportcard.com/badge/github.com/palemoky/lucky-day)](https://goreportcard.com/report/github.com/palemoky/lucky-day)
