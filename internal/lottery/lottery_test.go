@@ -17,7 +17,7 @@ func TestCalculateWeight(t *testing.T) {
 		name           string
 		participant    model.Participant
 		currentYear    int
-		expectedWeight float64 
+		expectedWeight float64
 	}{
 		{
 			name:           "没有中奖记录的新用户",
@@ -32,7 +32,7 @@ func TestCalculateWeight(t *testing.T) {
 				WinningHistory: []model.WinningRecord{{Year: 2024, PrizeLevel: 3}},
 			},
 			currentYear:    2025,
-			expectedWeight: 0.01, 
+			expectedWeight: 0.01,
 		},
 		{
 			name: "五年前中过特等奖的用户",
@@ -41,7 +41,7 @@ func TestCalculateWeight(t *testing.T) {
 				WinningHistory: []model.WinningRecord{{Year: 2020, PrizeLevel: 0}},
 			},
 			currentYear:    2025,
-			expectedWeight: 0.3767, 
+			expectedWeight: 0.3767,
 		},
 		{
 			name: "去年中过特等奖的用户 (权重触底)",
@@ -50,7 +50,7 @@ func TestCalculateWeight(t *testing.T) {
 				WinningHistory: []model.WinningRecord{{Year: 2024, PrizeLevel: 0}},
 			},
 			currentYear:    2025,
-			expectedWeight: 0.01, 
+			expectedWeight: 0.01,
 		},
 	}
 
@@ -66,7 +66,7 @@ func TestCalculateWeight(t *testing.T) {
 // helper function to create a standard set of participants for tests
 func createTestParticipants(count int) []model.Participant {
 	participants := make([]model.Participant, count)
-	for i := 0; i < count; i++ {
+	for i := range count {
 		participants[i] = model.Participant{ID: i + 1, Name: fmt.Sprintf("User%d", i+1)}
 	}
 	return participants
@@ -253,7 +253,7 @@ func FuzzEngine_Draw(f *testing.F) {
 			}
 
 			winners, ok := engine.Draw(prizes[i].ID)
-			
+
 			// 断言本次抽奖的结果
 			assert.True(t, ok, "当有候选人时，抽奖应该返回 true")
 			assert.Len(t, winners, expectedDrawCount, "抽出中奖者的人数应符合预期")
