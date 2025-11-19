@@ -1,4 +1,4 @@
-# lucky-day 幸运日
+# Lucky Day
 
 ![Go Version](https://img.shields.io/badge/go-1.24+-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
@@ -7,7 +7,7 @@
 
 一款功能强大、高度可配置的终端抽奖应用程序。专为公司年会、线上活动、社区抽奖等场景设计，提供公平、透明且富有观赏性的抽奖体验。
 
-![Lucky Day Screenshot](screenshot.png)
+![Lucky Day Screenshot](docs/screenshot.png)
 
 ---
 
