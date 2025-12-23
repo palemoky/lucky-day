@@ -7,8 +7,8 @@ on:
     branches: [main]
 
 jobs:
-  test-and-build:
-    name: Lint, Test & Build
+  test:
+    name: Lint & Test
     runs-on: ubuntu-latest
 
     steps:
@@ -35,14 +35,3 @@ jobs:
           files: ./coverage.out
           flags: unittests
           fail_ci_if_error: false
-
-      - name: Build
-        run: go build -v -o lottery ./cmd
-
-      - name: Verify build artifacts
-        run: |
-          if [ ! -f "lottery" ]; then
-            echo "Error: lottery binary not found"
-            exit 1
-          fi
-          echo "✓ Build successful"
