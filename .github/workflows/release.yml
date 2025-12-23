@@ -5,116 +5,111 @@ on:
     tags:
       - "v*"
   workflow_dispatch:
-    inputs:
-      tag:
-        description: "The tag name for debug release"
-        required: true
-        default: "v0.0.0-test"
+
+permissions:
+  contents: write
 
 jobs:
   build:
-    name: Build ${{ matrix.os }}/${{ matrix.arch }}
+    name: Build ${{ matrix.goos }}-${{ matrix.goarch }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        os: [linux, windows, darwin]
-        arch: [amd64, arm64]
-        exclude:
-           - os: windows
-             arch: arm64
+        goos: [linux, darwin, windows]
+        goarch: [amd64, arm64]
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version-file: "go.mod"
-          cache: true
+          go-version: "1.25"
 
-      - name: Determine Tag and Env
-        shell: bash
+      - name: Get version
+        id: version
         run: |
-          if [[ "${{ github.event_name }}" == "push" ]]; then
-            echo "TAG_NAME=${{ github.ref_name }}" >> $GITHUB_ENV
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
           else
-            echo "TAG_NAME=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
+            echo "VERSION=dev-$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
           fi
-          echo "PROJECT_NAME=${{ github.event.repository.name }}" >> $GITHUB_ENV
 
-      - name: Build and Package
-        id: build-pkg
+      - name: Build binary
         env:
-          GOOS: ${{ matrix.os }}
-          GOARCH: ${{ matrix.arch }}
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
         run: |
-          PACKAGE_DIR="${PROJECT_NAME}_${TAG_NAME}_${GOOS}_${GOARCH}"
-          BINARY_NAME="${PROJECT_NAME}"
-
-          # Windows 后缀处理
-          if [ "${GOOS}" = "windows" ]; then
-            BINARY_NAME+=".exe"
+          BINARY_NAME="lottery-${{ matrix.goos }}-${{ matrix.goarch }}"
+          if [ "${{ matrix.goos }}" = "windows" ]; then
+            BINARY_NAME="${BINARY_NAME}.exe"
           fi
 
-          mkdir -p "${PACKAGE_DIR}"
+          go build -o "${BINARY_NAME}" -ldflags="-s -w" ./cmd
+          echo "BINARY_NAME=${BINARY_NAME}" >> $GITHUB_ENV
 
-          echo "Building ${BINARY_NAME}..."
-          go build -ldflags="-s -w" -o "${PACKAGE_DIR}/${BINARY_NAME}" ./cmd
+      - name: Create archive
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          ARCHIVE_NAME="lottery-${VERSION}-${{ matrix.goos }}-${{ matrix.goarch }}"
 
-          cp config.yml participants.csv README.md "${PACKAGE_DIR}/" || true
-
-          if [ "${GOOS}" = "windows" ]; then
-            ARCHIVE_NAME="${PACKAGE_DIR}.zip"
-            zip -r "${ARCHIVE_NAME}" "${PACKAGE_DIR}"
+          if [ "${{ matrix.goos }}" = "windows" ]; then
+            zip -r "${ARCHIVE_NAME}.zip" "${BINARY_NAME}" examples/ config.yml README.md LICENSE
+            echo "ARCHIVE_PATH=${ARCHIVE_NAME}.zip" >> $GITHUB_ENV
           else
-            ARCHIVE_NAME="${PACKAGE_DIR}.tar.gz"
-            tar -czvf "${ARCHIVE_NAME}" "${PACKAGE_DIR}"
+            tar czf "${ARCHIVE_NAME}.tar.gz" "${BINARY_NAME}" examples/ config.yml README.md LICENSE
+            echo "ARCHIVE_PATH=${ARCHIVE_NAME}.tar.gz" >> $GITHUB_ENV
           fi
 
-          echo "ASSET_PATH=${ARCHIVE_NAME}" >> $GITHUB_OUTPUT
-
-      - name: Upload Artifact
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: binary-${{ matrix.os }}-${{ matrix.arch }}
-          path: ${{ steps.build-pkg.outputs.ASSET_PATH }}
+          name: ${{ matrix.goos }}-${{ matrix.goarch }}
+          path: ${{ env.ARCHIVE_PATH }}
           retention-days: 1
 
-  create-release:
-    name: Create GitHub Release
-    runs-on: ubuntu-latest
+  release:
+    name: Create Release
     needs: build
-    permissions:
-      contents: write
-
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
 
     steps:
-      - name: Determine Tag Name
-        id: tag
-        run: |
-          if [[ "${{ github.event_name }}" == "push" ]]; then
-            echo "name=${{ github.ref_name }}" >> $GITHUB_OUTPUT
-          else
-            echo "name=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
-          fi
-
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          pattern: binary-*
+          path: artifacts
           merge-multiple: true
-          path: assets
 
-      - name: List assets (Debug)
-        run: ls -R assets
+      - name: Generate checksums
+        run: |
+          cd artifacts
+          sha256sum * > checksums.txt
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.tag.outputs.name }}
-          files: assets/*
-          generate_release_notes: true
-          draft: ${{ github.event_name == 'workflow_dispatch' }}
-          prerelease: ${{ contains(steps.tag.outputs.name, '-') }}
+          files: artifacts/*
+          body: |
+            ## 🎉 Lucky Day ${{ github.ref_name }}
+
+            ### 📦 下载说明
+
+            1. 下载对应平台的压缩包
+            2. 解压到任意目录
+            3. 编辑 `examples/lottery_template.xlsx` 添加参与者
+            4. 运行 `./lottery` (Linux/macOS) 或 `lottery.exe` (Windows)
+
+            ### 📝 校验文件完整性
+
+            ```bash
+            # 下载 checksums.txt
+            sha256sum -c checksums.txt
+            ```
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
