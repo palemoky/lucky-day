@@ -1,4 +1,4 @@
-.PHONY: help release
+.PHONY: help release test coverage lint fmt clean build install
 
 # 默认目标
 .DEFAULT_GOAL := help
@@ -10,6 +10,55 @@ YELLOW := \033[0;33m
 RED := \033[0;31m
 CYAN := \033[0;36m
 NC := \033[0m # No Color
+
+## help: 显示帮助信息
+help:  ## Show this help message
+	@echo "$(BLUE)════════════════════════════════════════$(NC)"
+	@echo "$(BLUE)         Lucky Day - Makefile$(NC)"
+	@echo "$(BLUE)════════════════════════════════════════$(NC)"
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-15s$(NC) %s\n", $$1, $$2}'
+
+## test: 运行所有测试
+test:  ## Run all tests
+	@echo "$(BLUE)Running tests...$(NC)"
+	go test -v -race ./...
+
+## coverage: 生成测试覆盖率报告
+coverage:  ## Generate test coverage report
+	@echo "$(BLUE)Generating coverage report...$(NC)"
+	go test -coverprofile=coverage.out ./...
+	go tool cover -html=coverage.out -o coverage.html
+	@echo "$(GREEN)✓ Coverage report generated: coverage.html$(NC)"
+
+## lint: 运行代码检查
+lint:  ## Run linters
+	@echo "$(BLUE)Running golangci-lint...$(NC)"
+	golangci-lint run
+
+## fmt: 格式化代码
+fmt:  ## Format code
+	@echo "$(BLUE)Formatting code...$(NC)"
+	gofumpt -w .
+	goimports -w -local github.com/palemoky/lucky-day .
+	@echo "$(GREEN)✓ Code formatted$(NC)"
+
+## clean: 清理构建产物
+clean:  ## Clean build artifacts
+	@echo "$(BLUE)Cleaning...$(NC)"
+	rm -f lottery coverage.out coverage.html checkin_qr.png
+	@echo "$(GREEN)✓ Cleaned$(NC)"
+
+## build: 构建二进制文件
+build:  ## Build binary
+	@echo "$(BLUE)Building lottery...$(NC)"
+	go build -trimpath -ldflags="-s -w" -o lottery ./cmd
+	@echo "$(GREEN)✓ Built: lottery$(NC)"
+
+## install: 安装到 GOPATH
+install:  ## Install to GOPATH
+	@echo "$(BLUE)Installing...$(NC)"
+	go install ./cmd
+	@echo "$(GREEN)✓ Installed$(NC)"
 
 ## release: 创建并推送版本标签
 release:  ## Create and push version tag

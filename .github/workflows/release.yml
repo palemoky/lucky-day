@@ -27,7 +27,8 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
-          go-version: "1.25"
+          go-version-file: go.mod
+          cache: true
 
       - name: Get version
         id: version
@@ -48,7 +49,7 @@ jobs:
             BINARY_NAME="${BINARY_NAME}.exe"
           fi
 
-          go build -o "${BINARY_NAME}" -ldflags="-s -w" ./cmd
+          go build -trimpath -o "${BINARY_NAME}" -ldflags="-s -w" ./cmd
           echo "BINARY_NAME=${BINARY_NAME}" >> $GITHUB_ENV
 
       - name: Create archive

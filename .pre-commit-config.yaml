@@ -29,7 +29,7 @@ repos:
       # Format Go imports
       - id: goimports
         name: Format Go imports (goimports)
-        entry: goimports -w -local github.com/palemoky/chinese-poetry-api
+        entry: goimports -w -local github.com/palemoky/lucky-day
         language: system
         types: [go]
         stages: [pre-commit]

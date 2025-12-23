@@ -7,12 +7,15 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
+	qrcode "github.com/skip2/go-qrcode"
+	"golang.org/x/time/rate"
+
 	"github.com/palemoky/lucky-day/internal/i18n"
 	"github.com/palemoky/lucky-day/internal/model"
-	qrcode "github.com/skip2/go-qrcode"
 )
 
 //go:embed templates/*.html
@@ -27,6 +30,7 @@ type Server struct {
 	server         *http.Server
 	translator     *i18n.Translator
 	newParticipant chan model.Participant
+	limiter        *rate.Limiter // Rate limiter for check-in requests
 }
 
 // NewServer creates a new check-in server
@@ -37,6 +41,7 @@ func NewServer(port int, translator *i18n.Translator) *Server {
 		nextID:         1,
 		translator:     translator,
 		newParticipant: make(chan model.Participant, 100),
+		limiter:        rate.NewLimiter(rate.Limit(10), 20), // 10 requests/sec, burst of 20
 	}
 }
 
@@ -109,6 +114,12 @@ func (s *Server) handleCheckInPage(w http.ResponseWriter, r *http.Request) {
 
 // handleCheckIn handles check-in form submission
 func (s *Server) handleCheckIn(w http.ResponseWriter, r *http.Request) {
+	// Rate limiting
+	if !s.limiter.Allow() {
+		http.Error(w, "Too many requests, please try again later", http.StatusTooManyRequests)
+		return
+	}
+
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -119,9 +130,16 @@ func (s *Server) handleCheckIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	name := r.FormValue("name")
+	// Input validation
+	name := strings.TrimSpace(r.FormValue("name"))
 	if name == "" {
 		http.Error(w, "Name is required", http.StatusBadRequest)
+		return
+	}
+
+	// Validate name length (1-100 characters)
+	if len(name) > 100 {
+		http.Error(w, "Name is too long (max 100 characters)", http.StatusBadRequest)
 		return
 	}
 
