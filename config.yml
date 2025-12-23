@@ -26,11 +26,11 @@ datasource:
 
   # 如果 type 是 csv, 则使用下面的配置
   csv:
-    path: "participants.csv"
+    path: "examples/participants.csv"
 
   # 如果 type 是 excel, 则使用下面的配置
   excel:
-    path: "lottery_template.xlsx"
+    path: "examples/lottery_template.xlsx"
 
   # 如果 type 是 db, 则使用下面的配置
   database:
