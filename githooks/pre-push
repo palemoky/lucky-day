@@ -74,7 +74,7 @@ while read local_ref local_sha remote_ref remote_sha; do
         # 这里只检查 HEAD (当前状态) 的文件。
         # 既然是新分支，假设所有当前文件都值得关注。
         echo "${YELLOW}New branch push detected. checking HEAD...${NC}"
-        range="HEAD" 
+        range="HEAD"
         # 注意：对于新分支，diff-tree HEAD 只能看到最后一次 commit 的变动。
         # 如果希望新分支强制跑测试，可以将下面的 changed_files 逻辑改为强制 true
     else
@@ -89,7 +89,7 @@ while read local_ref local_sha remote_ref remote_sha; do
     if [ -n "$changed_go_files" ] || [ "$range" = "HEAD" ]; then
         # 如果是新分支(HEAD) 或者检测到了 go 文件变化，则运行测试
         echo "${YELLOW}Detected changes in Go files. Starting validation...${NC}"
-        
+
         # 在子 shell 中运行函数，防止 cd 影响后续循环
         if ! (run_go_tests); then
             echo "${RED}--------------------------------------------------------${NC}"

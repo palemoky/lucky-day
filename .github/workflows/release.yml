@@ -51,19 +51,19 @@ jobs:
         run: |
           PACKAGE_DIR="${PROJECT_NAME}_${TAG_NAME}_${GOOS}_${GOARCH}"
           BINARY_NAME="${PROJECT_NAME}"
-          
+
           # Windows 后缀处理
           if [ "${GOOS}" = "windows" ]; then
             BINARY_NAME+=".exe"
           fi
-          
+
           mkdir -p "${PACKAGE_DIR}"
-          
+
           echo "Building ${BINARY_NAME}..."
           go build -ldflags="-s -w" -o "${PACKAGE_DIR}/${BINARY_NAME}" ./cmd
-          
+
           cp config.yml participants.csv README.md "${PACKAGE_DIR}/" || true
-          
+
           if [ "${GOOS}" = "windows" ]; then
             ARCHIVE_NAME="${PACKAGE_DIR}.zip"
             zip -r "${ARCHIVE_NAME}" "${PACKAGE_DIR}"
@@ -71,7 +71,7 @@ jobs:
             ARCHIVE_NAME="${PACKAGE_DIR}.tar.gz"
             tar -czvf "${ARCHIVE_NAME}" "${PACKAGE_DIR}"
           fi
-          
+
           echo "ASSET_PATH=${ARCHIVE_NAME}" >> $GITHUB_OUTPUT
 
       - name: Upload Artifact
@@ -87,9 +87,9 @@ jobs:
     needs: build
     permissions:
       contents: write
-    
+
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-    
+
     steps:
       - name: Determine Tag Name
         id: tag

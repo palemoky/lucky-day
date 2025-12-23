@@ -22,19 +22,19 @@ prizes:
 
 datasource:
   # 可选值为: csv 或 db
-  type: csv 
-  
+  type: csv
+
   # 如果 type 是 csv, 则使用下面的配置
   csv:
     path: "participants.csv"
-    
+
   # 如果 type 是 db, 则使用下面的配置
   database:
     # 可选值为: sqlite, mysql, postgres
     driver: sqlite
     # DSN (Data Source Name) 连接字符串
     # 不同的数据库，格式不同
-    # SQLite: "lottery.db" 
+    # SQLite: "lottery.db"
     # MySQL: "user:pass@tcp(127.0.0.1:3306)/dbname?charset=utf8mb4&parseTime=True&loc=Local"
     # Postgres: "host=localhost user=gorm password=gorm dbname=gorm port=9920 sslmode=disable TimeZone=Asia/Shanghai"
     dsn: "lottery.db"
