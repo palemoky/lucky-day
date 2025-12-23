@@ -10,10 +10,15 @@ import (
 type DataSourceConfig struct {
 	Type     string         `mapstructure:"type"`
 	CSV      CSVConfig      `mapstructure:"csv"`
+	Excel    ExcelConfig    `mapstructure:"excel"`
 	Database DatabaseConfig `mapstructure:"database"`
 }
 
 type CSVConfig struct {
+	Path string `mapstructure:"path"`
+}
+
+type ExcelConfig struct {
 	Path string `mapstructure:"path"`
 }
 

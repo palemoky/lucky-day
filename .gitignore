@@ -29,3 +29,6 @@ go.work.sum
 .vscode/
 
 builds/
+
+# QR check-in
+checkin_qr.png

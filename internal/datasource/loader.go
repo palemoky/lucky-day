@@ -16,6 +16,9 @@ func LoadParticipants(cfg config.DataSourceConfig) ([]model.Participant, error) 
 	case "csv":
 		fmt.Println("数据源: CSV 文件")
 		return loadParticipantsFromCSV(cfg.CSV.Path)
+	case "excel":
+		fmt.Println("数据源: Excel 文件")
+		return LoadParticipantsFromExcel(cfg.Excel.Path)
 	case "db":
 		fmt.Printf("数据源: 数据库 (%s)\n", cfg.Database.Driver)
 		return loadParticipantsFromDB(cfg.Database)
@@ -30,7 +33,7 @@ func loadParticipantsFromCSV(filePath string) ([]model.Participant, error) {
 	if err != nil {
 		return nil, fmt.Errorf("无法打开 CSV 文件: %w", err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }() // Ignore close error
 
 	reader := csv.NewReader(file)
 	reader.FieldsPerRecord = -1
