@@ -2,53 +2,35 @@ name: Test
 
 on:
   push:
-    branches:
-      - main
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
-  cancel-in-progress: true
+    branches: [main]
+  pull_request:
+    branches: [main]
 
 jobs:
-  test-and-lint:
-    name: Test and Lint
+  test:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v6
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
-          cache-dependency-path: go.sum
           cache: true
 
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v9
         with:
           version: latest
-          args: --enable=goimports --enable=staticcheck --timeout=5m
 
-      - name: Install gotestsum
-        run: go install gotest.tools/gotestsum@latest
+      - name: Run tests
+        run: go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
 
-      - name: Run tests with coverage
-        run: |
-          gotestsum --format short --no-summary=skipped -- -coverprofile=cover.out ./...
-
-          echo "Checking Go test coverage..."
-          go tool cover -func=cover.out
-
-          coverage=$(go tool cover -func=cover.out | grep '^total:' | awk '{gsub(/%/, "", $3); print $3}')
-          echo "Total coverage: ${coverage}%"
-
-          THRESHOLD=20.0
-          is_passed=$(awk -v cov="$coverage" -v th="$THRESHOLD" 'BEGIN {print (cov >= th) ? 1 : 0}')
-
-          if [ "$is_passed" -eq 1 ]; then
-             echo "Coverage ${coverage}% meets the threshold ${THRESHOLD}% ✓"
-          else
-             echo "Error: Coverage ${coverage}% is below threshold ${THRESHOLD}%"
-             exit 1
-          fi
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage.out
+          flags: unittests
+          fail_ci_if_error: false

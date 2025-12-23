@@ -2,39 +2,43 @@ prizes:
   - id: 1
     name: "特等奖：欧洲豪华双人游"
     count: 1
-    level: 0  # 0 对应我们之前用 iota 定义的 PrizeLevelSpecial
+    level: 0 # 0 对应我们之前用 iota 定义的 PrizeLevelSpecial
     probability: 0.1
   - id: 2
     name: "一等奖：最新款笔记本电脑"
     count: 3
-    level: 1  # 1 对应 PrizeLevel1
+    level: 1 # 1 对应 PrizeLevel1
     probability: 0.3
   - id: 3
     name: "二等奖：降噪耳机"
     count: 5
-    level: 2  # 2 对应 PrizeLevel2
+    level: 2 # 2 对应 PrizeLevel2
     probability: 0.6
   - id: 4
     name: "三等奖：阳光普照购物卡"
     count: 10
-    level: 3  # 3 对应 PrizeLevel3
+    level: 3 # 3 对应 PrizeLevel3
     probability: 0.9
 
 datasource:
-  # 可选值为: csv 或 db
-  type: csv 
-  
+  # 可选值为: csv, excel 或 db
+  type: excel
+
   # 如果 type 是 csv, 则使用下面的配置
   csv:
-    path: "participants.csv"
-    
+    path: "examples/participants.csv"
+
+  # 如果 type 是 excel, 则使用下面的配置
+  excel:
+    path: "examples/lottery_template.xlsx"
+
   # 如果 type 是 db, 则使用下面的配置
   database:
     # 可选值为: sqlite, mysql, postgres
     driver: sqlite
     # DSN (Data Source Name) 连接字符串
     # 不同的数据库，格式不同
-    # SQLite: "lottery.db" 
+    # SQLite: "lottery.db"
     # MySQL: "user:pass@tcp(127.0.0.1:3306)/dbname?charset=utf8mb4&parseTime=True&loc=Local"
     # Postgres: "host=localhost user=gorm password=gorm dbname=gorm port=9920 sslmode=disable TimeZone=Asia/Shanghai"
     dsn: "lottery.db"
