@@ -6,9 +6,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/palemoky/lucky-day/internal/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/palemoky/lucky-day/internal/config"
+	"github.com/palemoky/lucky-day/internal/model"
 )
 
 func TestLoadPrizesFromExcel(t *testing.T) {
@@ -215,6 +217,159 @@ func TestCreateExcelTemplate(t *testing.T) {
 			participants, err := LoadParticipantsFromExcel(outputPath)
 			require.NoError(t, err)
 			assert.NotEmpty(t, participants, "模板应该包含示例参与者")
+		})
+	}
+}
+
+func TestLoadParticipantsFromCSV(t *testing.T) {
+	tests := []struct {
+		name      string
+		setupFunc func(t *testing.T) string
+		wantErr   bool
+		validate  func(t *testing.T, participants []model.Participant)
+	}{
+		{
+			name: "加载有效的CSV文件",
+			setupFunc: func(t *testing.T) string {
+				tmpDir := t.TempDir()
+				csvPath := filepath.Join(tmpDir, "participants.csv")
+
+				content := `ID,Name,Department,Email
+1,张三,技术部,zhangsan@example.com
+2,李四,市场部,lisi@example.com
+3,王五,人事部,wangwu@example.com
+`
+				err := os.WriteFile(csvPath, []byte(content), 0o644)
+				require.NoError(t, err)
+				return csvPath
+			},
+			wantErr: false,
+			validate: func(t *testing.T, participants []model.Participant) {
+				assert.Len(t, participants, 3)
+				assert.Equal(t, 1, participants[0].ID)
+				assert.Equal(t, "张三", participants[0].Name)
+				assert.Equal(t, 2, participants[1].ID)
+				assert.Equal(t, "李四", participants[1].Name)
+			},
+		},
+		{
+			name: "空CSV文件",
+			setupFunc: func(t *testing.T) string {
+				tmpDir := t.TempDir()
+				csvPath := filepath.Join(tmpDir, "empty.csv")
+				content := `ID,Name
+`
+				err := os.WriteFile(csvPath, []byte(content), 0o644)
+				require.NoError(t, err)
+				return csvPath
+			},
+			wantErr: false,
+			validate: func(t *testing.T, participants []model.Participant) {
+				assert.Empty(t, participants)
+			},
+		},
+		{
+			name: "文件不存在",
+			setupFunc: func(t *testing.T) string {
+				return "nonexistent.csv"
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			path := tt.setupFunc(t)
+
+			participants, err := loadParticipantsFromCSV(path)
+
+			if tt.wantErr {
+				require.Error(t, err)
+				return
+			}
+
+			require.NoError(t, err)
+
+			if tt.validate != nil {
+				tt.validate(t, participants)
+			}
+		})
+	}
+}
+
+func TestLoadParticipants(t *testing.T) {
+	tests := []struct {
+		name      string
+		setupFunc func(t *testing.T) config.DataSourceConfig
+		wantErr   bool
+		validate  func(t *testing.T, participants []model.Participant)
+	}{
+		{
+			name: "从Excel加载",
+			setupFunc: func(t *testing.T) config.DataSourceConfig {
+				return config.DataSourceConfig{
+					Type: "excel",
+					Excel: config.ExcelConfig{
+						Path: "../../examples/lottery_template.xlsx",
+					},
+				}
+			},
+			wantErr: false,
+			validate: func(t *testing.T, participants []model.Participant) {
+				assert.NotEmpty(t, participants)
+			},
+		},
+		{
+			name: "从CSV加载",
+			setupFunc: func(t *testing.T) config.DataSourceConfig {
+				tmpDir := t.TempDir()
+				csvPath := filepath.Join(tmpDir, "test.csv")
+				content := `ID,Name
+1,测试用户
+`
+				err := os.WriteFile(csvPath, []byte(content), 0o644)
+				require.NoError(t, err)
+
+				return config.DataSourceConfig{
+					Type: "csv",
+					CSV: config.CSVConfig{
+						Path: csvPath,
+					},
+				}
+			},
+			wantErr: false,
+			validate: func(t *testing.T, participants []model.Participant) {
+				assert.Len(t, participants, 1)
+				assert.Equal(t, "测试用户", participants[0].Name)
+			},
+		},
+		{
+			name: "未知数据源类型",
+			setupFunc: func(t *testing.T) config.DataSourceConfig {
+				return config.DataSourceConfig{
+					Type: "unknown",
+				}
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := tt.setupFunc(t)
+
+			participants, err := LoadParticipants(cfg)
+
+			if tt.wantErr {
+				require.Error(t, err)
+				return
+			}
+
+			require.NoError(t, err)
+
+			if tt.validate != nil {
+				tt.validate(t, participants)
+			}
 		})
 	}
 }
