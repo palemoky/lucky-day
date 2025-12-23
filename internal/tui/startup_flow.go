@@ -2,7 +2,6 @@ package tui
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/palemoky/lucky-day/internal/checkin"
 	"github.com/palemoky/lucky-day/internal/i18n"
 )
 
@@ -11,7 +10,6 @@ type StartupFlow struct {
 	stage      int // 0=language, 1=mode
 	langModel  LanguageSelectionModel
 	modeModel  ModeSelectionModel
-	qrModel    QRCheckInModel
 	translator *i18n.Translator
 
 	// Results
@@ -42,11 +40,6 @@ func (m StartupFlow) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case 1:
 			modeModel, _ := m.modeModel.Update(wsMsg)
 			m.modeModel = modeModel.(ModeSelectionModel)
-		case 2:
-			if m.qrModel.server != nil {
-				qrModel, _ := m.qrModel.Update(wsMsg)
-				m.qrModel = qrModel.(QRCheckInModel)
-			}
 		}
 		return m, nil
 	}
@@ -101,29 +94,6 @@ func (m StartupFlow) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		return m, cmd
-
-	case 2: // QR check-in (if initialized)
-		if m.qrModel.server != nil {
-			var cmd tea.Cmd
-			qrModel, cmd := m.qrModel.Update(msg)
-			m.qrModel = qrModel.(QRCheckInModel)
-
-			// Check if QR check-in is done
-			if m.qrModel.done {
-				return m, tea.Quit
-			}
-
-			// Check if user quit
-			if msg, ok := msg.(tea.KeyMsg); ok && (msg.String() == "q" || msg.String() == "ctrl+c") {
-				if !m.qrModel.done {
-					m.userQuit = true
-					return m, tea.Quit
-				}
-			}
-
-			return m, cmd
-		}
-		return m, tea.Quit
 	}
 
 	return m, nil
@@ -135,23 +105,13 @@ func (m StartupFlow) View() string {
 		return m.langModel.View()
 	case 1:
 		return m.modeModel.View()
-	case 2:
-		if m.qrModel.server != nil {
-			return m.qrModel.View()
-		}
 	}
 	return ""
 }
 
-// SetQRModel sets the QR check-in model (called from main after server setup)
-func (m *StartupFlow) SetQRModel(server *checkin.Server, qrPath, url string) {
-	m.qrModel = NewQRCheckInModel(server, m.translator, qrPath, url)
-	m.stage = 2
-}
-
 // GetResults returns the selected language, mode, and quit status
-func (m StartupFlow) GetResults() (i18n.Language, LotteryMode, bool, bool) {
-	return m.selectedLang, m.selectedMode, m.userQuit, m.qrModel.done
+func (m StartupFlow) GetResults() (i18n.Language, LotteryMode, bool) {
+	return m.selectedLang, m.selectedMode, m.userQuit
 }
 
 // RunStartupFlow runs the unified startup flow
@@ -165,7 +125,7 @@ func RunStartupFlow() (i18n.Language, LotteryMode, bool, error) {
 	}
 
 	if flow, ok := finalModel.(StartupFlow); ok {
-		lang, mode, quit, _ := flow.GetResults()
+		lang, mode, quit := flow.GetResults()
 		return lang, mode, quit, nil
 	}
 
