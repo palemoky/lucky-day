@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/mroth/weightedrand"
+
 	"github.com/palemoky/lucky-day/internal/model"
 )
 
