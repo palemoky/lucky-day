@@ -3,8 +3,9 @@ package config
 import (
 	"fmt"
 
-	"github.com/palemoky/lucky-day/internal/model"
 	"github.com/spf13/viper"
+
+	"github.com/palemoky/lucky-day/internal/model"
 )
 
 type DataSourceConfig struct {

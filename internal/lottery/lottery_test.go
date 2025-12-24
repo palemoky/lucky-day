@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/palemoky/lucky-day/internal/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/palemoky/lucky-day/internal/model"
 )
 
 func TestCalculateWeight(t *testing.T) {

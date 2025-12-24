@@ -3,12 +3,13 @@ package datasource
 import (
 	"fmt"
 
-	"github.com/palemoky/lucky-day/internal/config"
-	"github.com/palemoky/lucky-day/internal/model"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+
+	"github.com/palemoky/lucky-day/internal/config"
+	"github.com/palemoky/lucky-day/internal/model"
 )
 
 // newDBConnection 根据配置创建数据库连接
