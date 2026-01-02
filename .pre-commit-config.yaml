@@ -25,7 +25,6 @@ repos:
         language: system
         types: [go]
         stages: [pre-commit]
-        pass_filenames: true
 
       # Format Go imports
       - id: goimports
@@ -34,7 +33,6 @@ repos:
         language: system
         types: [go]
         stages: [pre-commit]
-        pass_filenames: true
 
       # Run go mod tidy
       - id: go-mod-tidy
