@@ -18,6 +18,22 @@ repos:
   # Go tools
   - repo: local
     hooks:
+      # Format Go code with gofumpt (stricter than gofmt)
+      - id: gofumpt
+        name: Format Go code (gofumpt)
+        entry: gofumpt -w
+        language: system
+        types: [go]
+        stages: [pre-commit]
+
+      # Format Go imports
+      - id: goimports
+        name: Format Go imports (goimports)
+        entry: goimports -w -local github.com/palemoky/lucky-day
+        language: system
+        types: [go]
+        stages: [pre-commit]
+
       # Run go mod tidy
       - id: go-mod-tidy
         name: Tidy Go modules
