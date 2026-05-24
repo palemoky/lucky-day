@@ -220,7 +220,7 @@ func (m *model) viewAllWinners() string {
 	return sidebarStyle.Render(strings.TrimSuffix(b.String(), "\n"))
 }
 
-// 渲染奖项��择列表
+// 渲染奖项选择列表
 func (m *model) viewPrizeSelection() string {
 	var s strings.Builder
 	s.WriteString("请选择要抽取的奖项：\n\n")
