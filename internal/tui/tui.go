@@ -253,7 +253,7 @@ func (m *model) viewDrawing() string {
 	var s strings.Builder
 	prize := m.engine.GetPrizes()[m.cursor]
 
-	s.WriteString(fmt.Sprintf("正在抽取 [%s] ... %s\n\n", prize.Name, m.spinner.View()))
+	fmt.Fprintf(&s, "正在抽取 [%s] ... %s\n\n", prize.Name, m.spinner.View())
 
 	var winnerBlocks []string
 	for i, name := range m.rollingNames {
@@ -281,9 +281,9 @@ func (m *model) viewShowWinners() string {
 	prize := m.engine.GetPrizes()[m.cursor]
 
 	if len(m.currentWinners) == 0 {
-		s.WriteString(fmt.Sprintf("很遗憾，[%s] 本次无人中奖。\n", prize.Name))
+		fmt.Fprintf(&s, "很遗憾，[%s] 本次无人中奖。\n", prize.Name)
 	} else {
-		s.WriteString(fmt.Sprintf("🎉 恭喜以下人员获得 [%s] 🎉\n\n", prize.Name))
+		fmt.Fprintf(&s, "🎉 恭喜以下人员获得 [%s] 🎉\n\n", prize.Name)
 		var winnerBlocks []string
 		for i, w := range m.currentWinners {
 			if i >= maxDisplayedWinners {
