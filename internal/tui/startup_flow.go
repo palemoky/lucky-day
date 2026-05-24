@@ -1,7 +1,7 @@
 package tui
 
 import (
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 
 	"github.com/palemoky/lucky-day/internal/i18n"
 )
@@ -64,7 +64,7 @@ func (m StartupFlow) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		// Check if user quit
-		if msg, ok := msg.(tea.KeyMsg); ok && (msg.String() == "q" || msg.String() == "ctrl+c") {
+		if msg, ok := msg.(tea.KeyPressMsg); ok && (msg.String() == "q" || msg.String() == "ctrl+c") {
 			if !m.langModel.done {
 				m.userQuit = true
 				return m, tea.Quit
@@ -87,7 +87,7 @@ func (m StartupFlow) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		// Check if user quit
-		if msg, ok := msg.(tea.KeyMsg); ok && (msg.String() == "q" || msg.String() == "ctrl+c") {
+		if msg, ok := msg.(tea.KeyPressMsg); ok && (msg.String() == "q" || msg.String() == "ctrl+c") {
 			if !m.modeModel.done {
 				m.userQuit = true
 				return m, tea.Quit
@@ -100,14 +100,14 @@ func (m StartupFlow) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m StartupFlow) View() string {
+func (m StartupFlow) View() tea.View {
 	switch m.stage {
 	case 0:
 		return m.langModel.View()
 	case 1:
 		return m.modeModel.View()
 	}
-	return ""
+	return tea.NewView("")
 }
 
 // GetResults returns the selected language, mode, and quit status
@@ -118,7 +118,7 @@ func (m StartupFlow) GetResults() (i18n.Language, LotteryMode, bool) {
 // RunStartupFlow runs the unified startup flow
 func RunStartupFlow() (i18n.Language, LotteryMode, bool, error) {
 	m := NewStartupFlow()
-	p := tea.NewProgram(m, tea.WithAltScreen())
+	p := tea.NewProgram(m)
 
 	finalModel, err := p.Run()
 	if err != nil {
