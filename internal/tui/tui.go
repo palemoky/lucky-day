@@ -5,9 +5,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/bubbles/spinner"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/spinner"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 
 	"github.com/palemoky/lucky-day/internal/lottery"
 	model1 "github.com/palemoky/lucky-day/internal/model"
@@ -56,7 +56,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.width, m.height = msg.Width, msg.Height
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		return m.handleKeyPress(msg)
 	}
 
@@ -75,7 +75,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m *model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (m *model) handleKeyPress(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch m.state {
 	case statePrizeSelection:
 		return m.updatePrizeSelection(msg)
@@ -88,7 +88,7 @@ func (m *model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 // 处理奖项选择界面的按键
-func (m *model) updatePrizeSelection(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (m *model) updatePrizeSelection(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	prizes := m.engine.GetPrizes()
 	switch msg.String() {
 	case "ctrl+c", "q":
@@ -101,7 +101,7 @@ func (m *model) updatePrizeSelection(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if m.cursor < len(prizes)-1 {
 			m.cursor++
 		}
-	case "enter", " ":
+	case "enter", "space":
 		prize := prizes[m.cursor]
 		if prize.DrawnCount >= prize.Count {
 			m.lastErr = fmt.Sprintf("错误: [%s] 的名额已抽完！", prize.Name)
@@ -119,7 +119,7 @@ func (m *model) updatePrizeSelection(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 // 处理抽奖动画界面的按键
-func (m *model) updateDrawing(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (m *model) updateDrawing(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "ctrl+c", "q":
 		return m, tea.Quit
@@ -136,7 +136,7 @@ func (m *model) updateDrawing(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 // 处理显示中奖者界面的按键
-func (m *model) updateShowWinners(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (m *model) updateShowWinners(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "ctrl+c", "q":
 		return m, tea.Quit
@@ -147,7 +147,7 @@ func (m *model) updateShowWinners(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	}
 }
 
-func (m *model) View() string {
+func (m *model) View() tea.View {
 	var mainContent, sidebar string
 
 	// 根据状态渲染主面板
@@ -175,7 +175,9 @@ func (m *model) View() string {
 	)
 
 	// 将整个视图在屏幕上居中
-	return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, view)
+	v := tea.NewView(lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, view))
+	v.AltScreen = true
+	return v
 }
 
 // 渲染所有中奖者名单 (侧边栏)
@@ -253,7 +255,7 @@ func (m *model) viewDrawing() string {
 	var s strings.Builder
 	prize := m.engine.GetPrizes()[m.cursor]
 
-	s.WriteString(fmt.Sprintf("正在抽取 [%s] ... %s\n\n", prize.Name, m.spinner.View()))
+	fmt.Fprintf(&s, "正在抽取 [%s] ... %s\n\n", prize.Name, m.spinner.View())
 
 	var winnerBlocks []string
 	for i, name := range m.rollingNames {
@@ -281,9 +283,9 @@ func (m *model) viewShowWinners() string {
 	prize := m.engine.GetPrizes()[m.cursor]
 
 	if len(m.currentWinners) == 0 {
-		s.WriteString(fmt.Sprintf("很遗憾，[%s] 本次无人中奖。\n", prize.Name))
+		fmt.Fprintf(&s, "很遗憾，[%s] 本次无人中奖。\n", prize.Name)
 	} else {
-		s.WriteString(fmt.Sprintf("🎉 恭喜以下人员获得 [%s] 🎉\n\n", prize.Name))
+		fmt.Fprintf(&s, "🎉 恭喜以下人员获得 [%s] 🎉\n\n", prize.Name)
 		var winnerBlocks []string
 		for i, w := range m.currentWinners {
 			if i >= maxDisplayedWinners {
@@ -325,7 +327,7 @@ func tick() tea.Cmd {
 
 // StartTUI 启动TUI程序
 func StartTUI(engine *lottery.Engine) error {
-	p := tea.NewProgram(NewTUIModel(engine), tea.WithAltScreen())
+	p := tea.NewProgram(NewTUIModel(engine))
 	_, err := p.Run()
 	return err
 }
