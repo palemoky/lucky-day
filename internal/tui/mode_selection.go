@@ -3,8 +3,8 @@ package tui
 import (
 	"fmt"
 
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 
 	"github.com/palemoky/lucky-day/internal/i18n"
 )
@@ -50,7 +50,7 @@ func (m ModeSelectionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.height = msg.Height
 		return m, nil
 
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "ctrl+c", "q":
 			return m, tea.Quit
@@ -71,7 +71,7 @@ func (m ModeSelectionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m ModeSelectionModel) View() string {
+func (m ModeSelectionModel) View() tea.View {
 	titleStyle := lipgloss.NewStyle().
 		Bold(true).
 		Foreground(lipgloss.Color("86")).
@@ -111,11 +111,13 @@ func (m ModeSelectionModel) View() string {
 	s += "\n" + lipgloss.NewStyle().Faint(true).Render(m.translator.T("mode.instruction"))
 
 	// Use dynamic window size for centering, like the lottery interface
-	return lipgloss.Place(
+	v := tea.NewView(lipgloss.Place(
 		m.width, m.height,
 		lipgloss.Center, lipgloss.Center,
 		s,
-	)
+	))
+	v.AltScreen = true
+	return v
 }
 
 // GetSelectedMode returns the selected mode
@@ -126,7 +128,7 @@ func (m ModeSelectionModel) GetSelectedMode() LotteryMode {
 // SelectMode shows mode selection screen and returns the selected mode
 func SelectMode(translator *i18n.Translator) (LotteryMode, bool, error) {
 	m := NewModeSelectionModel(translator)
-	p := tea.NewProgram(m, tea.WithAltScreen())
+	p := tea.NewProgram(m)
 
 	finalModel, err := p.Run()
 	if err != nil {

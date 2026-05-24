@@ -3,8 +3,8 @@ package tui
 import (
 	"fmt"
 
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 
 	"github.com/palemoky/lucky-day/internal/i18n"
 )
@@ -39,7 +39,7 @@ func (m LanguageSelectionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.height = msg.Height
 		return m, nil
 
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "ctrl+c", "q":
 			return m, tea.Quit
@@ -60,7 +60,7 @@ func (m LanguageSelectionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m LanguageSelectionModel) View() string {
+func (m LanguageSelectionModel) View() tea.View {
 	titleStyle := lipgloss.NewStyle().
 		Bold(true).
 		Foreground(lipgloss.Color("86")).
@@ -102,11 +102,13 @@ func (m LanguageSelectionModel) View() string {
 	s += "\n" + lipgloss.NewStyle().Faint(true).Render("使用 ↑/↓ 选择，回车确认 | Use ↑/↓ to select, Enter to confirm")
 
 	// Use dynamic window size for centering, like the lottery interface
-	return lipgloss.Place(
+	v := tea.NewView(lipgloss.Place(
 		m.width, m.height,
 		lipgloss.Center, lipgloss.Center,
 		s,
-	)
+	))
+	v.AltScreen = true
+	return v
 }
 
 // GetSelectedLanguage returns the selected language
@@ -122,7 +124,7 @@ func (m LanguageSelectionModel) IsQuit() bool {
 // SelectLanguage shows language selection screen and returns the selected language
 func SelectLanguage() (i18n.Language, bool, error) {
 	m := NewLanguageSelectionModel()
-	p := tea.NewProgram(m, tea.WithAltScreen())
+	p := tea.NewProgram(m)
 
 	finalModel, err := p.Run()
 	if err != nil {
